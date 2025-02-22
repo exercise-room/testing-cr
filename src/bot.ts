@@ -44,7 +44,7 @@ export const robot = (app: Probot) => {
   };
 
   app.on(
-    ['pull_request.opened', 'pull_request.synchronize'],
+    ['pull_request.opened', 'pull_request.synchronize', 'pull_request.labeled'],
     async (context) => {
       const repo = context.repo();
       const chat = await loadChat(context);
@@ -74,6 +74,16 @@ export const robot = (app: Probot) => {
       ) {
         log.info('no target label attached');
         return 'no target label attached';
+      }
+
+      // 만약 labeled 이벤트인데 추가된 라벨이 target_label이 아니면 스킵
+      if (
+        context.payload.action === 'labeled' &&
+        target_label &&
+        context.payload.label?.name !== target_label
+      ) {
+        log.info('non-target label added');
+        return 'non-target label added';
       }
 
       const data = await context.octokit.repos.compareCommits({
